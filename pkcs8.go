@@ -2,7 +2,7 @@
 package pkcs8
 
 import (
-	"code.google.com/p/go.crypto/pbkdf2"
+	"golang.org/x/crypto/pbkdf2"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/ecdsa"
