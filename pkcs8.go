@@ -2,17 +2,18 @@
 package pkcs8
 
 import (
-	"code.google.com/p/go.crypto/pbkdf2"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha1"
 	"crypto/x509"
-	"crypto/elliptic"
 	"encoding/asn1"
 	"errors"
+
+	"golang.org/x/crypto/pbkdf2"
 )
 
 // Copy from crypto/x509
@@ -105,7 +106,7 @@ func ParsePKCS8PrivateKey(der []byte, v ...[]byte) (key interface{}, err error) 
 	if v == nil {
 		key, err = x509.ParsePKCS8PrivateKey(der)
 		return
-        }
+	}
 
 	// Use the password provided to decrypt the private key
 	password := v[0]
