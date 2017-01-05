@@ -101,11 +101,10 @@ type encryptedPrivateKeyInfo struct {
 // ParsePKCS8PrivateKey parses encrypted/unencrypted private keys in PKCS#8 format. To parse encrypted private keys, a password of []byte type should be provided to the function as the second parameter.
 //
 // The function can decrypt the private key encrypted with AES-256-CBC mode, and stored in PKCS #5 v2.0 format.
-func ParsePKCS8PrivateKey(der []byte, v ...[]byte) (key interface{}, err error) {
+func ParsePKCS8PrivateKey(der []byte, v ...[]byte) (interface{}, error) {
 	// No password provided, assume the private key is unencrypted
 	if v == nil {
-		key, err = x509.ParsePKCS8PrivateKey(der)
-		return
+		return x509.ParsePKCS8PrivateKey(der)
 	}
 
 	// Use the password provided to decrypt the private key
@@ -141,21 +140,19 @@ func ParsePKCS8PrivateKey(der []byte, v ...[]byte) (key interface{}, err error) 
 		mode := cipher.NewCBCDecrypter(block, iv)
 		mode.CryptBlocks(encryptedKey, encryptedKey)
 
-		key, err = x509.ParsePKCS8PrivateKey(encryptedKey)
+		key, err := x509.ParsePKCS8PrivateKey(encryptedKey)
 		if err != nil {
 			return nil, errors.New("pkcs8: incorrect password")
 		}
 
-		return x509.ParsePKCS8PrivateKey(encryptedKey)
+		return key, nil
 	default:
 		return nil, errors.New("pkcs8: only AES-256-CBC supported")
 
 	}
-	return
 }
 
-func convertPrivateKeyToPKCS8(priv interface{}) (der []byte, err error) {
-	var rb []byte
+func convertPrivateKeyToPKCS8(priv interface{}) ([]byte, error) {
 	var pkey privateKeyInfo
 
 	switch priv := priv.(type) {
@@ -187,15 +184,10 @@ func convertPrivateKeyToPKCS8(priv interface{}) (der []byte, err error) {
 		pkey.PrivateKey = x509.MarshalPKCS1PrivateKey(priv)
 	}
 
-	rb, err = asn1.Marshal(pkey)
-	if err != nil {
-		return nil, err
-	}
-
-	return rb, nil
+	return asn1.Marshal(pkey)
 }
 
-func convertPrivateKeyToPKCS8Encrypted(priv interface{}, password []byte) (der []byte, err error) {
+func convertPrivateKeyToPKCS8Encrypted(priv interface{}, password []byte) ([]byte, error) {
 	// Convert private key into PKCS8 format
 	pkey, err := convertPrivateKeyToPKCS8(priv)
 	if err != nil {
@@ -205,8 +197,8 @@ func convertPrivateKeyToPKCS8Encrypted(priv interface{}, password []byte) (der [
 	// Calculate key from password based on PKCS5 algorithm
 	// Use 8 byte salt, 16 byte IV, and 2048 iteration
 	iter := 2048
-	var salt []byte = make([]byte, 8)
-	var iv []byte = make([]byte, 16)
+	salt := make([]byte, 8)
+	iv := make([]byte, 16)
 	rand.Reader.Read(salt)
 	rand.Reader.Read(iv)
 	key := pbkdf2.Key(password, salt, iter, 32, sha1.New)
@@ -235,29 +227,18 @@ func convertPrivateKeyToPKCS8Encrypted(priv interface{}, password []byte) (der [
 
 	encryptedPkey := encryptedPrivateKeyInfo{pbes2algo, encryptedKey}
 
-	der, err = asn1.Marshal(encryptedPkey)
-	if err != nil {
-		return
-	}
-
-	return
+	return asn1.Marshal(encryptedPkey)
 }
 
 // ConvertPrivateKeyToPKCS8 converts the private key into PKCS#8 format.
 // To encrypt the private key, the password of []byte type should be provided as the second parameter.
 //
 // The only supported key types are RSA and ECDSA (*rsa.PublicKey or *ecdsa.PublicKey for priv)
-func ConvertPrivateKeyToPKCS8(priv interface{}, v ...[]byte) (der []byte, err error) {
+func ConvertPrivateKeyToPKCS8(priv interface{}, v ...[]byte) ([]byte, error) {
 	if v == nil {
-		der, err = convertPrivateKeyToPKCS8(priv)
-
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		password := string(v[0])
-		der, err = convertPrivateKeyToPKCS8Encrypted(priv, []byte(password))
+		return convertPrivateKeyToPKCS8(priv)
 	}
 
-	return der, err
+	password := string(v[0])
+	return convertPrivateKeyToPKCS8Encrypted(priv, []byte(password))
 }
