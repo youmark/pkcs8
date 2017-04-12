@@ -207,7 +207,7 @@ func convertPrivateKeyToPKCS8Encrypted(priv interface{}, password []byte) ([]byt
 	padding := aes.BlockSize - len(pkey)%aes.BlockSize
 	if padding > 0 {
 		n := len(pkey)
-		pkey = pkey[0 : n+padding]
+		pkey = append(pkey, make([]byte, padding)...)
 		for i := 0; i < padding; i++ {
 			pkey[n+i] = byte(padding)
 		}
