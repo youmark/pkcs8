@@ -4,6 +4,7 @@ package pkcs8
 import (
 	"crypto/aes"
 	"crypto/cipher"
+	"crypto/des"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
@@ -52,6 +53,7 @@ var (
 	oidPKCS5PBKDF2 = asn1.ObjectIdentifier{1, 2, 840, 113549, 1, 5, 12}
 	oidPBES2       = asn1.ObjectIdentifier{1, 2, 840, 113549, 1, 5, 13}
 	oidAES256CBC   = asn1.ObjectIdentifier{2, 16, 840, 1, 101, 3, 4, 1, 42}
+	oidDESEDE3CBC  = asn1.ObjectIdentifier{1, 2, 840, 113549, 3, 7}
 )
 
 type ecPrivateKey struct {
@@ -125,31 +127,35 @@ func ParsePKCS8PrivateKey(der []byte, v ...[]byte) (interface{}, error) {
 	encParam := privKey.EncryptionAlgorithm.PBES2Params.EncryptionScheme
 	kdfParam := privKey.EncryptionAlgorithm.PBES2Params.KeyDerivationFunc.PBKDF2Params
 
+	iv := encParam.IV
+	salt := kdfParam.Salt
+	iter := kdfParam.IterationCount
+
+	encryptedKey := privKey.EncryptedData
+	var symkey []byte
+	var block cipher.Block
+	var err error
 	switch {
 	case encParam.EncryAlgo.Equal(oidAES256CBC):
-		iv := encParam.IV
-		salt := kdfParam.Salt
-		iter := kdfParam.IterationCount
-
-		encryptedKey := privKey.EncryptedData
-		symkey := pbkdf2.Key(password, salt, iter, 32, sha1.New)
-		block, err := aes.NewCipher(symkey)
-		if err != nil {
-			return nil, err
-		}
-		mode := cipher.NewCBCDecrypter(block, iv)
-		mode.CryptBlocks(encryptedKey, encryptedKey)
-
-		key, err := x509.ParsePKCS8PrivateKey(encryptedKey)
-		if err != nil {
-			return nil, errors.New("pkcs8: incorrect password")
-		}
-
-		return key, nil
+		symkey = pbkdf2.Key(password, salt, iter, 32, sha1.New)
+		block, err = aes.NewCipher(symkey)
+	case encParam.EncryAlgo.Equal(oidDESEDE3CBC):
+		symkey = pbkdf2.Key(password, salt, iter, 24, sha1.New)
+		block, err = des.NewTripleDESCipher(symkey)
 	default:
-		return nil, errors.New("pkcs8: only AES-256-CBC supported")
-
+		return nil, errors.New("pkcs8: only AES-256-CBC and DES-EDE3-CBC are supported")
 	}
+	if err != nil {
+		return nil, err
+	}
+	mode := cipher.NewCBCDecrypter(block, iv)
+	mode.CryptBlocks(encryptedKey, encryptedKey)
+
+	key, err := x509.ParsePKCS8PrivateKey(encryptedKey)
+	if err != nil {
+		return nil, errors.New("pkcs8: incorrect password")
+	}
+	return key, nil
 }
 
 func convertPrivateKeyToPKCS8(priv interface{}) ([]byte, error) {
