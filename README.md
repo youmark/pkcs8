@@ -13,8 +13,8 @@ pkcs8 package fills the gap here. It implements functions to process private key
 go get github.com/youmark/pkcs8
 ```
 ## dependency
-This package depends golang.org/x/crypto/pbkdf package. Use the following command to retrive the package
+This package depends on golang.org/x/crypto/pbkdf2 package. Use the following command to retrive pbkdf2 package
 ```text
-go get golang.org/x/crypto/pbkdf
+go get golang.org/x/crypto/pbkdf2
 ```
 
