@@ -8,6 +8,7 @@ pkcs8 package fills the gap here. It implements functions to process private key
 [**Godoc**](http://godoc.org/github.com/youmark/pkcs8)
 
 ## Installation
+Supports Go 1.9+
 
 ```text
 go get github.com/youmark/pkcs8
