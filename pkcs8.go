@@ -219,8 +219,15 @@ func convertPrivateKeyToPKCS8Encrypted(priv interface{}, password []byte) ([]byt
 	iter := 2048
 	salt := make([]byte, 8)
 	iv := make([]byte, 16)
-	rand.Reader.Read(salt)
-	rand.Reader.Read(iv)
+	_, err = rand.Read(salt)
+	if err != nil {
+		return nil, err
+	}
+	_, err = rand.Read(iv)
+	if err != nil {
+		return nil, err
+	}
+
 	key := pbkdf2.Key(password, salt, iter, 32, sha256.New)
 
 	// Use AES256-CBC mode, pad plaintext with PKCS5 padding scheme
