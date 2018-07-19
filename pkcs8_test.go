@@ -120,35 +120,129 @@ wgo3AjtXevJaGgep5GsW2krw9S7dC7xG9dR33Z/a9nBnO1rKm7Htf0+986w/1vmj
 -----END ENCRYPTED PRIVATE KEY-----
 `
 
-func TestParsePKCS8PrivateKey(t *testing.T) {
+func TestParsePKCS8PrivateKeyRSA(t *testing.T) {
 	keyList := []struct {
+		name      string
 		clear     string
 		encrypted string
 	}{
-		{rsa2048, encryptedRSA2048aes},
-		{rsa2048, encryptedRSA2048des3},
-		{ec256, encryptedEC256aes},
+		{
+			name:      "encryptedRSA2048aes",
+			clear:     rsa2048,
+			encrypted: encryptedRSA2048aes,
+		},
+		{
+			name:      "encryptedRSA2048des3",
+			clear:     rsa2048,
+			encrypted: encryptedRSA2048des3,
+		},
 	}
 	for i, key := range keyList {
-		block, _ := pem.Decode([]byte(key.encrypted))
-		_, err := pkcs8.ParsePKCS8PrivateKey(block.Bytes, []byte("password"))
-		if err != nil {
-			t.Errorf("%d: ParsePKCS8PrivateKey returned: %s", i, err)
-		}
-		_, err = pkcs8.ParsePKCS8PrivateKey(block.Bytes, []byte("wrong password"))
-		if err == nil {
-			t.Errorf("%d: should have failed", i)
-		}
-		_, err = pkcs8.ParsePKCS8PrivateKey(block.Bytes)
-		if err == nil {
-			t.Errorf("%d: should have failed", i)
-		}
+		t.Run(key.name, func(t *testing.T) {
+			block, _ := pem.Decode([]byte(key.encrypted))
+			_, err := pkcs8.ParsePKCS8PrivateKeyRSA(block.Bytes, []byte("password"))
+			if err != nil {
+				t.Errorf("%d: ParsePKCS8PrivateKeyRSA returned: %s", i, err)
+			}
+			_, err = pkcs8.ParsePKCS8PrivateKeyRSA(block.Bytes, []byte("wrong password"))
+			if err == nil {
+				t.Errorf("%d: should have failed", i)
+			}
+			_, err = pkcs8.ParsePKCS8PrivateKeyRSA(block.Bytes)
+			if err == nil {
+				t.Errorf("%d: should have failed", i)
+			}
 
-		block, _ = pem.Decode([]byte(key.clear))
-		_, err = pkcs8.ParsePKCS8PrivateKey(block.Bytes)
-		if err != nil {
-			t.Errorf("%d: ParsePKCS8PrivateKey returned: %s", i, err)
-		}
+			block, _ = pem.Decode([]byte(key.clear))
+			_, err = pkcs8.ParsePKCS8PrivateKeyRSA(block.Bytes)
+			if err != nil {
+				t.Errorf("%d: ParsePKCS8PrivateKeyRSA returned: %s", i, err)
+			}
+		})
+	}
+}
+
+func TestParsePKCS8PrivateKeyECDSA(t *testing.T) {
+	keyList := []struct {
+		name      string
+		clear     string
+		encrypted string
+	}{
+		{
+			name:      "encryptedEC256aes",
+			clear:     ec256,
+			encrypted: encryptedEC256aes,
+		},
+	}
+	for i, key := range keyList {
+		t.Run(key.name, func(t *testing.T) {
+			block, _ := pem.Decode([]byte(key.encrypted))
+			_, err := pkcs8.ParsePKCS8PrivateKeyECDSA(block.Bytes, []byte("password"))
+			if err != nil {
+				t.Errorf("%d: ParsePKCS8PrivateKeyECDSA returned: %s", i, err)
+			}
+			_, err = pkcs8.ParsePKCS8PrivateKeyECDSA(block.Bytes, []byte("wrong password"))
+			if err == nil {
+				t.Errorf("%d: should have failed", i)
+			}
+			_, err = pkcs8.ParsePKCS8PrivateKeyECDSA(block.Bytes)
+			if err == nil {
+				t.Errorf("%d: should have failed", i)
+			}
+
+			block, _ = pem.Decode([]byte(key.clear))
+			_, err = pkcs8.ParsePKCS8PrivateKeyECDSA(block.Bytes)
+			if err != nil {
+				t.Errorf("%d: ParsePKCS8PrivateKeyECDSA returned: %s", i, err)
+			}
+		})
+	}
+}
+
+func TestParsePKCS8PrivateKey(t *testing.T) {
+	keyList := []struct {
+		name      string
+		clear     string
+		encrypted string
+	}{
+		{
+			name:      "encryptedRSA2048aes",
+			clear:     rsa2048,
+			encrypted: encryptedRSA2048aes,
+		},
+		{
+			name:      "encryptedRSA2048des3",
+			clear:     rsa2048,
+			encrypted: encryptedRSA2048des3,
+		},
+		{
+			name:      "encryptedEC256aes",
+			clear:     ec256,
+			encrypted: encryptedEC256aes,
+		},
+	}
+	for i, key := range keyList {
+		t.Run(key.name, func(t *testing.T) {
+			block, _ := pem.Decode([]byte(key.encrypted))
+			_, err := pkcs8.ParsePKCS8PrivateKey(block.Bytes, []byte("password"))
+			if err != nil {
+				t.Errorf("%d: ParsePKCS8PrivateKey returned: %s", i, err)
+			}
+			_, err = pkcs8.ParsePKCS8PrivateKey(block.Bytes, []byte("wrong password"))
+			if err == nil {
+				t.Errorf("%d: should have failed", i)
+			}
+			_, err = pkcs8.ParsePKCS8PrivateKey(block.Bytes)
+			if err == nil {
+				t.Errorf("%d: should have failed", i)
+			}
+
+			block, _ = pem.Decode([]byte(key.clear))
+			_, err = pkcs8.ParsePKCS8PrivateKey(block.Bytes)
+			if err != nil {
+				t.Errorf("%d: ParsePKCS8PrivateKey returned: %s", i, err)
+			}
+		})
 	}
 }
 
