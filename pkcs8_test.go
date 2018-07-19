@@ -6,8 +6,9 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"encoding/pem"
-	"pkcs8"
 	"testing"
+
+	"github.com/youmark/pkcs8"
 )
 
 const rsa2048 = `-----BEGIN PRIVATE KEY-----
