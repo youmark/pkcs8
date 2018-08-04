@@ -109,6 +109,36 @@ type encryptedPrivateKeyInfo struct {
 	EncryptedData       []byte
 }
 
+// ParsePKCS8PrivateKeyRSA parses encrypted/unencrypted private keys in PKCS#8 format. To parse encrypted private keys, a password of []byte type should be provided to the function as the second parameter.
+//
+// The function can decrypt the private key encrypted with AES-256-CBC mode, and stored in PKCS #5 v2.0 format.
+func ParsePKCS8PrivateKeyRSA(der []byte, v ...[]byte) (*rsa.PrivateKey, error) {
+	key, err := ParsePKCS8PrivateKey(der, v...)
+	if err != nil {
+		return nil, err
+	}
+	typedKey, ok := key.(*rsa.PrivateKey)
+	if !ok {
+		return nil, errors.New("key block is not of type RSA")
+	}
+	return typedKey, nil
+}
+
+// ParsePKCS8PrivateKeyECDSA parses encrypted/unencrypted private keys in PKCS#8 format. To parse encrypted private keys, a password of []byte type should be provided to the function as the second parameter.
+//
+// The function can decrypt the private key encrypted with AES-256-CBC mode, and stored in PKCS #5 v2.0 format.
+func ParsePKCS8PrivateKeyECDSA(der []byte, v ...[]byte) (*ecdsa.PrivateKey, error) {
+	key, err := ParsePKCS8PrivateKey(der, v...)
+	if err != nil {
+		return nil, err
+	}
+	typedKey, ok := key.(*ecdsa.PrivateKey)
+	if !ok {
+		return nil, errors.New("key block is not of type ECDSA")
+	}
+	return typedKey, nil
+}
+
 // ParsePKCS8PrivateKey parses encrypted/unencrypted private keys in PKCS#8 format. To parse encrypted private keys, a password of []byte type should be provided to the function as the second parameter.
 //
 // The function can decrypt the private key encrypted with AES-256-CBC mode, and stored in PKCS #5 v2.0 format.
