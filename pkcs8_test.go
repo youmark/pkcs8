@@ -121,6 +121,19 @@ wgo3AjtXevJaGgep5GsW2krw9S7dC7xG9dR33Z/a9nBnO1rKm7Htf0+986w/1vmj
 -----END ENCRYPTED PRIVATE KEY-----
 `
 
+const ec128 = `-----BEGIN PRIVATE KEY-----
+MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgjLFzKb/8hsdSmPft
+s98RZ7AWzQnLDsMhy6v+/3BZlZ6hRANCAASKkodoH+hHmBfwoFfrvv1E+iMLt3g1
+s6hxOUMbkv6ZTVFXND/3z9zlJli6/YGrlSnsHOJc0GbwSYD1AMwZyr0T
+-----END PRIVATE KEY-----`
+const encryptedEC128aes = `-----BEGIN ENCRYPTED PRIVATE KEY-----
+MIHeMEkGCSqGSIb3DQEFDTA8MBsGCSqGSIb3DQEFDDAOBAg7qE4RYQEEugICCAAw
+HQYJYIZIAWUDBAECBBBa+6eKv6il/iEjOw8/AmEHBIGQ24YmBiMfzjJjFU+PAwXr
+zCfR3NPOHBwn3+BkpyivaezSrFWIF919cnDyI15Omd+Iz2oljrT/R4IDC9NOmoAy
+5uKixYGAOi74Qr9kdgrT2Bfvu9wq+dYqPwLjR4WFHl2ofrLn7RCaOa8mOh3bgfHP
+SnXPiACchx53PDh6bZTIZ0V9v0ymcMuXf758OXbUmSGN
+-----END ENCRYPTED PRIVATE KEY-----`
+
 func TestParsePKCS8PrivateKeyRSA(t *testing.T) {
 	keyList := []struct {
 		name      string
@@ -220,6 +233,12 @@ func TestParsePKCS8PrivateKey(t *testing.T) {
 			name:      "encryptedEC256aes",
 			clear:     ec256,
 			encrypted: encryptedEC256aes,
+		},
+
+		{
+			name:      "encryptedEC128aes",
+			clear:     ec128,
+			encrypted: encryptedEC128aes,
 		},
 	}
 	for i, key := range keyList {
