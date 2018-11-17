@@ -51,11 +51,12 @@ func oidFromNamedCurve(curve elliptic.Curve) (asn1.ObjectIdentifier, bool) {
 
 // Unecrypted PKCS8
 var (
-	oidPKCS5PBKDF2 = asn1.ObjectIdentifier{1, 2, 840, 113549, 1, 5, 12}
-	oidPBES2       = asn1.ObjectIdentifier{1, 2, 840, 113549, 1, 5, 13}
-	oidAES256CBC   = asn1.ObjectIdentifier{2, 16, 840, 1, 101, 3, 4, 1, 42}
-   	oidHMACWithSHA256 = asn1.ObjectIdentifier{1, 2, 840, 113549, 2, 9}
-	oidDESEDE3CBC  = asn1.ObjectIdentifier{1, 2, 840, 113549, 3, 7}
+	oidPKCS5PBKDF2    = asn1.ObjectIdentifier{1, 2, 840, 113549, 1, 5, 12}
+	oidPBES2          = asn1.ObjectIdentifier{1, 2, 840, 113549, 1, 5, 13}
+	oidAES256CBC      = asn1.ObjectIdentifier{2, 16, 840, 1, 101, 3, 4, 1, 42}
+	oidAES128CBC      = asn1.ObjectIdentifier{2, 16, 840, 1, 101, 3, 4, 1, 2}
+	oidHMACWithSHA256 = asn1.ObjectIdentifier{1, 2, 840, 113549, 2, 9}
+	oidDESEDE3CBC     = asn1.ObjectIdentifier{1, 2, 840, 113549, 3, 7}
 )
 
 type ecPrivateKey struct {
@@ -73,15 +74,14 @@ type privateKeyInfo struct {
 
 // Encrypted PKCS8
 type prfParam struct {
-        IdPRF           asn1.ObjectIdentifier
-        NullParam       asn1.RawValue
+	IdPRF     asn1.ObjectIdentifier
+	NullParam asn1.RawValue
 }
 
 type pbkdf2Params struct {
 	Salt           []byte
 	IterationCount int
 	PrfParam       prfParam `asn1:"optional"`
-
 }
 
 type pbkdf2Algorithms struct {
@@ -170,16 +170,18 @@ func ParsePKCS8PrivateKey(der []byte, v ...[]byte) (interface{}, error) {
 	salt := kdfParam.Salt
 	iter := kdfParam.IterationCount
 	keyHash := sha1.New
-        if kdfParam.PrfParam.IdPRF.Equal(oidHMACWithSHA256){
-            keyHash = sha256.New
-        }
-
+	if kdfParam.PrfParam.IdPRF.Equal(oidHMACWithSHA256) {
+		keyHash = sha256.New
+	}
 
 	encryptedKey := privKey.EncryptedData
 	var symkey []byte
 	var block cipher.Block
 	var err error
 	switch {
+	case encParam.EncryAlgo.Equal(oidAES128CBC):
+		symkey = pbkdf2.Key(password, salt, iter, 16, keyHash)
+		block, err = aes.NewCipher(symkey)
 	case encParam.EncryAlgo.Equal(oidAES256CBC):
 		symkey = pbkdf2.Key(password, salt, iter, 32, keyHash)
 		block, err = aes.NewCipher(symkey)
@@ -187,7 +189,7 @@ func ParsePKCS8PrivateKey(der []byte, v ...[]byte) (interface{}, error) {
 		symkey = pbkdf2.Key(password, salt, iter, 24, keyHash)
 		block, err = des.NewTripleDESCipher(symkey)
 	default:
-		return nil, errors.New("pkcs8: only AES-256-CBC and DES-EDE3-CBC are supported")
+		return nil, errors.New("pkcs8: only AES-256-CBC, AES-128-CBC and DES-EDE3-CBC are supported")
 	}
 	if err != nil {
 		return nil, err
@@ -278,7 +280,7 @@ func convertPrivateKeyToPKCS8Encrypted(priv interface{}, password []byte) ([]byt
 	mode := cipher.NewCBCEncrypter(block, iv)
 	mode.CryptBlocks(encryptedKey, pkey)
 
-//	pbkdf2algo := pbkdf2Algorithms{oidPKCS5PBKDF2, pbkdf2Params{salt, iter, prfParam{oidHMACWithSHA256}}}
+	//	pbkdf2algo := pbkdf2Algorithms{oidPKCS5PBKDF2, pbkdf2Params{salt, iter, prfParam{oidHMACWithSHA256}}}
 
 	pbkdf2algo := pbkdf2Algorithms{oidPKCS5PBKDF2, pbkdf2Params{salt, iter, prfParam{oidHMACWithSHA256, asn1.RawValue{Tag: asn1.TagNull}}}}
 	pbkdf2encs := pbkdf2Encs{oidAES256CBC, iv}
