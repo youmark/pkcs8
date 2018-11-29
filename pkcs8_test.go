@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"encoding/pem"
+	"fmt"
 	"testing"
 
 	"github.com/youmark/pkcs8"
@@ -308,5 +309,19 @@ func TestConvertPrivateKeyToPKCS8(t *testing.T) {
 				t.Fatalf("%d, %s: Decoded key does not match original key", i, curve)
 			}
 		}
+	}
+}
+
+type unknown int
+
+func TestUnknownTypeFailure(t *testing.T) {
+	badInput := unknown(0)
+	_, err := pkcs8.ConvertPrivateKeyToPKCS8(badInput, []byte("password"))
+	if err == nil {
+		t.Fatal("expected error")
+	}
+
+	if e := err.Error(); e != fmt.Sprintf("unsupported key type: %T", badInput) {
+		t.Fatalf("unexpected error: %s", e)
 	}
 }
