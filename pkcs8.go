@@ -14,6 +14,7 @@ import (
 	"crypto/x509"
 	"encoding/asn1"
 	"errors"
+	"fmt"
 
 	"golang.org/x/crypto/pbkdf2"
 )
@@ -234,6 +235,8 @@ func convertPrivateKeyToPKCS8(priv interface{}) ([]byte, error) {
 		pkey.PrivateKeyAlgorithm = make([]asn1.ObjectIdentifier, 1)
 		pkey.PrivateKeyAlgorithm[0] = oidPublicKeyRSA
 		pkey.PrivateKey = x509.MarshalPKCS1PrivateKey(priv)
+	default:
+		return nil, fmt.Errorf("unsupported key type: %T", priv)
 	}
 
 	return asn1.Marshal(pkey)
@@ -294,12 +297,12 @@ func convertPrivateKeyToPKCS8Encrypted(priv interface{}, password []byte) ([]byt
 // ConvertPrivateKeyToPKCS8 converts the private key into PKCS#8 format.
 // To encrypt the private key, the password of []byte type should be provided as the second parameter.
 //
-// The only supported key types are RSA and ECDSA (*rsa.PublicKey or *ecdsa.PublicKey for priv)
+// The only supported key types are RSA and ECDSA (*rsa.PrivateKey or *ecdsa.PrivateKey for priv)
 func ConvertPrivateKeyToPKCS8(priv interface{}, v ...[]byte) ([]byte, error) {
 	if v == nil {
 		return convertPrivateKeyToPKCS8(priv)
 	}
 
-	password := string(v[0])
-	return convertPrivateKeyToPKCS8Encrypted(priv, []byte(password))
+	password := v[0]
+	return convertPrivateKeyToPKCS8Encrypted(priv, password)
 }
