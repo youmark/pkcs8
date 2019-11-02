@@ -1,12 +1,12 @@
 package pkcs8_test
 
 import (
+	"crypto"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/rsa"
 	"encoding/pem"
-	"fmt"
 	"testing"
 
 	"github.com/youmark/pkcs8"
@@ -106,6 +106,38 @@ RIiDkxAd7hbpm4/C/DoUZQ==
 -----END ENCRYPTED PRIVATE KEY-----
 `
 
+const encryptedRSA2048scrypt = `-----BEGIN ENCRYPTED PRIVATE KEY-----
+MIIFJTBPBgkqhkiG9w0BBQ0wQjAhBgkrBgEEAdpHBAswFAQIY6+u2Dcq3hwCAkAA
+AgEIAgEBMB0GCWCGSAFlAwQBKgQQ6Kut7Q560w1e+fqSiF6uUgSCBNBWRJP19DiT
+m/ZWEh4ukxTnrBpx59ATbuiBZjjty9vw/dkusUivNLsIoJDezuv4YxjxNx4zZsv+
+vI5/gWT78XdF0XHgrRKjB0AvQ4rdVSUhV2/sxMa8P5bwE7NikovkzP1rM0cPCLRE
+K5J81+pEOVKumJJg3jNtK18HtCiH0D4n276xK6fJ2BptA1BMNhlDkoz99kmwPfhg
+gMiJxbcGrYHMvCZAL8towTRomI82fjRwpEtT8eZ7aLUALDM53JXzhiz/bO2cKCRx
+4oLx6rChrqCTS4bZ++PPBS9klwW1kx5eMTGdv3IS+/Y7wvPtZ9jbwcjkSKpOsALv
+h/6CzUuTo5dIPDaOidLLHS4bfgKCC/da/uuow/ET7K6KBOZ6kCnXi300D+hZE8cJ
+GYjIQGVY3FtrtZx55hjeqyRsVrdKP0e83wNEnGgofsgeJ+H88zUxaMqIiz3e773M
+zshNXcCko9jAgr8PwRg7ARPql+TcS3fJ+HPBA1mDlT4xMXyFOgckMkz8xR08EA0M
+UcvtGAxLJYtsiMJigdrCI7lGmWZbj8tB2sS0JD95QsbR5CcsqzaELzoKMdOpG5MP
+4ZdgHpeGNtw15aAIdxfoFGGcNgLiZ+y7BC0fM9xYAPARrb64A3e3gmsJ3ZKEkZzR
+MbK9a08S+6VI68T9M0f3i53p/e09CYZ0TN3yMN/g/usxERzpji7zCjEYf6yuUeRF
+c3ceVVaxldexAOV0dEIUq8xehUhvhV129/hUHUyqsx1XiURWSx2TRSjuZ3SE63Sc
+LO81rijz4rFa69JXPGWNrzR0IS0CY8aMF79fwqpcLaRHIpfQLiIQ19qDHiipXCs/
+ZLli5MZQZ7AHoXqbHBQOqhiT2LLEgeVF4uEi0qM1ULfmmZMoJQg+ugRXPEJR0fa0
+ji6Hb/ZTDGwsdrNZGfTD4lJeiel3IPVcOzfeZqb6OsdkUSQzZZSvAET95qkKn/CN
+diPkX96iYuhjcace/f8xLnVY3TJ6WRpDW9oBzVFEm5jXtlHhVltau2Qmoi28pthE
+25QrNfoOs4qr2gaGA37VXSEW4yLU3jyqlP1esXxyEiqg9CKPnk/K/XxREjGJXElr
+FQtRif9b4QDBrZc38Y5ct7x+Ce7llJ3kKslVdF2rbVEn4nPIHIqw8oKDv/6+CNwo
+8O1B4u16WUqj2Th6hOQcmWb9Nb6Js5TSRtIJxrif6PTfTczSB9bZgU1fTxgr0tTI
+AERJLqFA9dvCxAehWrlegsSOwvJ/E8FwbGJLhiJs6aFk1fJ6NPkp62UkmvBMDq1w
+qYuwLSr920KrPsCYBa09Ldm9e88+nCQz5QWcJt2vvdIz0UQUqtsjUo8DWL0qNXgU
+JVSRrfE+64II2sxt3/9oywLCk9DG+dcWZH6SRjSt7y9KhWfhdGq1S6Og1Mjc+U4A
+L/TgycaVTBodGTmw5YlsbSBYzAwSBCaR7GLThhZqIlPrk6P3w8VZJ1B14nEcTP9Y
+GVdcEOqE0mwNtWZYcuy1cqPj6g/p9NOmLOnT8HGbjw9qtdl+iEGN/ZDWfu+En7ES
+Dv4v0MiWAMArKY8rAMWa9/phbWXVEtNz6RnJ460qxIax5GR0QPce3+lrswhmXSm4
+RNXdI4NIGtOdg8zwuKI5AefoLlWjt56Pzg==
+-----END ENCRYPTED PRIVATE KEY-----
+`
+
 const ec256 = `-----BEGIN PRIVATE KEY-----
 MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgjLFzKb/8hsdSmPft
 s98RZ7AWzQnLDsMhy6v+/3BZlZ6hRANCAASKkodoH+hHmBfwoFfrvv1E+iMLt3g1
@@ -127,6 +159,7 @@ MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgjLFzKb/8hsdSmPft
 s98RZ7AWzQnLDsMhy6v+/3BZlZ6hRANCAASKkodoH+hHmBfwoFfrvv1E+iMLt3g1
 s6hxOUMbkv6ZTVFXND/3z9zlJli6/YGrlSnsHOJc0GbwSYD1AMwZyr0T
 -----END PRIVATE KEY-----`
+
 const encryptedEC128aes = `-----BEGIN ENCRYPTED PRIVATE KEY-----
 MIHeMEkGCSqGSIb3DQEFDTA8MBsGCSqGSIb3DQEFDDAOBAg7qE4RYQEEugICCAAw
 HQYJYIZIAWUDBAECBBBa+6eKv6il/iEjOw8/AmEHBIGQ24YmBiMfzjJjFU+PAwXr
@@ -134,6 +167,25 @@ zCfR3NPOHBwn3+BkpyivaezSrFWIF919cnDyI15Omd+Iz2oljrT/R4IDC9NOmoAy
 5uKixYGAOi74Qr9kdgrT2Bfvu9wq+dYqPwLjR4WFHl2ofrLn7RCaOa8mOh3bgfHP
 SnXPiACchx53PDh6bZTIZ0V9v0ymcMuXf758OXbUmSGN
 -----END ENCRYPTED PRIVATE KEY-----`
+
+const encryptedEC256aes128sha1 = `-----BEGIN ENCRYPTED PRIVATE KEY-----
+MIHeMEkGCSqGSIb3DQEFDTA8MBsGCSqGSIb3DQEFDDAOBAgEoFG3x07DbQICCAAw
+HQYJYIZIAWUDBAECBBCRN9PNX9rBqXhaHLUOsv7YBIGQFfXAPPV+COWABJdSarog
+eUHFNaQ+R6x55Tz/mquNIwiOrP9DNoEd1PGtKaHaO+ACSEQwMfrGeh8BuNV69EwP
+bhsob/MZeexRbrLe2YN7Y7/Y0wpujalGlliMvs35f1fpq/9RfVU+qRpFED2lT4dm
+zOuhMC9Oo3oMYlbEXAT9mq33MkGKMUth2ek/bQIvnCHG
+-----END ENCRYPTED PRIVATE KEY-----
+`
+
+// From https://tools.ietf.org/html/rfc7914
+const encryptedRFCscrypt = `-----BEGIN ENCRYPTED PRIVATE KEY-----
+MIHiME0GCSqGSIb3DQEFDTBAMB8GCSsGAQQB2kcECzASBAVNb3VzZQIDEAAAAgEI
+AgEBMB0GCWCGSAFlAwQBKgQQyYmguHMsOwzGMPoyObk/JgSBkJb47EWd5iAqJlyy
++ni5ftd6gZgOPaLQClL7mEZc2KQay0VhjZm/7MbBUNbqOAXNM6OGebXxVp6sHUAL
+iBGY/Dls7B1TsWeGObE0sS1MXEpuREuloZjcsNVcNXWPlLdZtkSH6uwWzR0PyG/Z
++ZXfNodZtd/voKlvLOw5B3opGIFaLkbtLZQwMiGtl42AS89lZg==
+-----END ENCRYPTED PRIVATE KEY-----
+`
 
 func TestParsePKCS8PrivateKeyRSA(t *testing.T) {
 	keyList := []struct {
@@ -219,33 +271,55 @@ func TestParsePKCS8PrivateKey(t *testing.T) {
 		name      string
 		clear     string
 		encrypted string
+		password  string
 	}{
 		{
 			name:      "encryptedRSA2048aes",
 			clear:     rsa2048,
 			encrypted: encryptedRSA2048aes,
+			password:  "password",
 		},
 		{
 			name:      "encryptedRSA2048des3",
 			clear:     rsa2048,
 			encrypted: encryptedRSA2048des3,
+			password:  "password",
+		},
+		{
+			name:      "encryptedRSA2048scrypt",
+			clear:     rsa2048,
+			encrypted: encryptedRSA2048scrypt,
+			password:  "password",
 		},
 		{
 			name:      "encryptedEC256aes",
 			clear:     ec256,
 			encrypted: encryptedEC256aes,
+			password:  "password",
 		},
-
+		{
+			name:      "encryptedEC256aes128sha1",
+			clear:     ec256,
+			encrypted: encryptedEC256aes128sha1,
+			password:  "password",
+		},
+		{
+			name:      "encryptedRFCscrypt",
+			clear:     "",
+			encrypted: encryptedRFCscrypt,
+			password:  "Rabbit",
+		},
 		{
 			name:      "encryptedEC128aes",
 			clear:     ec128,
 			encrypted: encryptedEC128aes,
+			password:  "password",
 		},
 	}
 	for i, key := range keyList {
 		t.Run(key.name, func(t *testing.T) {
 			block, _ := pem.Decode([]byte(key.encrypted))
-			_, err := pkcs8.ParsePKCS8PrivateKey(block.Bytes, []byte("password"))
+			_, err := pkcs8.ParsePKCS8PrivateKey(block.Bytes, []byte(key.password))
 			if err != nil {
 				t.Errorf("%d: ParsePKCS8PrivateKey returned: %s", i, err)
 			}
@@ -258,10 +332,12 @@ func TestParsePKCS8PrivateKey(t *testing.T) {
 				t.Errorf("%d: should have failed", i)
 			}
 
-			block, _ = pem.Decode([]byte(key.clear))
-			_, err = pkcs8.ParsePKCS8PrivateKey(block.Bytes)
-			if err != nil {
-				t.Errorf("%d: ParsePKCS8PrivateKey returned: %s", i, err)
+			if key.clear != "" {
+				block, _ = pem.Decode([]byte(key.clear))
+				_, err = pkcs8.ParsePKCS8PrivateKey(block.Bytes)
+				if err != nil {
+					t.Errorf("%d: ParsePKCS8PrivateKey returned: %s", i, err)
+				}
 			}
 		})
 	}
@@ -275,7 +351,7 @@ func TestConvertPrivateKeyToPKCS8(t *testing.T) {
 		}
 		rsaPrivateKey, err := rsa.GenerateKey(rand.Reader, 2048)
 		if err != nil {
-			t.Fatalf("%d: ConvertPrivateKeyToPKCS8 returned: %s", i, err)
+			t.Fatalf("%d: GenerateKey returned: %s", i, err)
 		}
 		der, err := pkcs8.ConvertPrivateKeyToPKCS8(rsaPrivateKey, args...)
 		if err != nil {
@@ -292,16 +368,102 @@ func TestConvertPrivateKeyToPKCS8(t *testing.T) {
 		for _, curve := range []elliptic.Curve{
 			elliptic.P224(), elliptic.P256(), elliptic.P384(), elliptic.P521(),
 		} {
-
 			ecPrivateKey, err := ecdsa.GenerateKey(curve, rand.Reader)
 			if err != nil {
-				t.Fatalf("%d, %s: ConvertPrivateKeyToPKCS8 returned: %s", i, curve, err)
+				t.Fatalf("%d, %s: GenerateKey returned: %s", i, curve, err)
 			}
 			der, err = pkcs8.ConvertPrivateKeyToPKCS8(ecPrivateKey, args...)
 			if err != nil {
 				t.Fatalf("%d, %s: ConvertPrivateKeyToPKCS8 returned: %s", i, curve, err)
 			}
 			decodedECPrivateKey, err := pkcs8.ParsePKCS8PrivateKey(der, args...)
+			if err != nil {
+				t.Fatalf("%d, %s: ParsePKCS8PrivateKey returned: %s", i, curve, err)
+			}
+			if ecPrivateKey.D.Cmp(decodedECPrivateKey.(*ecdsa.PrivateKey).D) != 0 {
+				t.Fatalf("%d, %s: Decoded key does not match original key", i, curve)
+			}
+		}
+	}
+}
+
+func TestMarshalPrivateKey(t *testing.T) {
+	for i, tt := range []struct {
+		password []byte
+		opts     *pkcs8.Opts
+	}{
+		{
+			password: nil,
+			opts:     nil,
+		},
+		{
+			password: []byte("password"),
+			opts: &pkcs8.Opts{
+				Cipher: pkcs8.AES128CBC,
+				KDFOpts: pkcs8.PBKDF2Opts{
+					SaltSize: 8, IterationCount: 2048, HMACHash: crypto.SHA256,
+				},
+			},
+		},
+		{
+			password: []byte("password"),
+			opts: &pkcs8.Opts{
+				Cipher: pkcs8.AES256CBC,
+				KDFOpts: pkcs8.PBKDF2Opts{
+					SaltSize: 16, IterationCount: 16, HMACHash: crypto.SHA256,
+				},
+			},
+		},
+		{
+			password: []byte("password"),
+			opts: &pkcs8.Opts{
+				Cipher: pkcs8.TripleDESCBC,
+				KDFOpts: pkcs8.PBKDF2Opts{
+					SaltSize: 16, IterationCount: 16, HMACHash: crypto.SHA1,
+				},
+			},
+		},
+		{
+			password: []byte("password"),
+			opts: &pkcs8.Opts{
+				Cipher: pkcs8.AES256CBC,
+				KDFOpts: pkcs8.ScryptOpts{
+					CostParameter:            1 << 2,
+					BlockSize:                8,
+					ParallelizationParameter: 1,
+					SaltSize:                 16,
+				},
+			},
+		},
+	} {
+		rsaPrivateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+		if err != nil {
+			t.Fatalf("%d: GenerateKey returned: %s", i, err)
+		}
+		der, err := pkcs8.MarshalPrivateKey(rsaPrivateKey, tt.password, tt.opts)
+		if err != nil {
+			t.Fatalf("%d: MarshalPrivateKey returned: %s", i, err)
+		}
+		decodedRSAPrivateKey, _, err := pkcs8.ParsePrivateKey(der, tt.password)
+		if err != nil {
+			t.Fatalf("%d: ParsePKCS8PrivateKey returned: %s", i, err)
+		}
+		if rsaPrivateKey.D.Cmp(decodedRSAPrivateKey.(*rsa.PrivateKey).D) != 0 {
+			t.Fatalf("%d: Decoded key does not match original key", i)
+		}
+
+		for _, curve := range []elliptic.Curve{
+			elliptic.P224(), elliptic.P256(), elliptic.P384(), elliptic.P521(),
+		} {
+			ecPrivateKey, err := ecdsa.GenerateKey(curve, rand.Reader)
+			if err != nil {
+				t.Fatalf("%d, %s: ConvertPrivateKeyToPKCS8 returned: %s", i, curve, err)
+			}
+			der, err = pkcs8.MarshalPrivateKey(ecPrivateKey, tt.password, tt.opts)
+			if err != nil {
+				t.Fatalf("%d, %s: ConvertPrivateKeyToPKCS8 returned: %s", i, curve, err)
+			}
+			decodedECPrivateKey, _, err := pkcs8.ParsePrivateKey(der, tt.password)
 			if err != nil {
 				t.Fatalf("%d, %s: ParsePKCS8PrivateKey returned: %s", i, curve, err)
 			}
@@ -319,9 +481,5 @@ func TestUnknownTypeFailure(t *testing.T) {
 	_, err := pkcs8.ConvertPrivateKeyToPKCS8(badInput, []byte("password"))
 	if err == nil {
 		t.Fatal("expected error")
-	}
-
-	if e := err.Error(); e != fmt.Sprintf("unsupported key type: %T", badInput) {
-		t.Fatalf("unexpected error: %s", e)
 	}
 }
