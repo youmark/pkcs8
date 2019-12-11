@@ -15,4 +15,4 @@ This repository is for enhancing original library in serveral aspects. Mainly, w
 ### License
 
 - The original youmark/pkcs8 is under MIT license.
-- The our fixed codes is under Chiken-ware license. If we meet some day, and you think  this stuff is worth it, you can buy us a fried chicken in return.
+- The our fixed codes is under Chicken-ware license. If we meet some day, and you think this stuff is worth it, you can buy us a fried chicken in return.
