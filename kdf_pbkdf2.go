@@ -26,6 +26,13 @@ var (
 	oidHMACWithSHA512_256 = asn1.ObjectIdentifier{1, 2, 840, 113549, 2, 13}
 )
 
+type pbkdf2Params struct {
+	Salt           []byte
+	IterationCount int
+	KeyLength      int                      `asn1:"optional"`
+	PRF            pkix.AlgorithmIdentifier `asn1:"optional"`
+}
+
 func init() {
 	RegisterKDF(oidPKCS5PBKDF2, func() KDFParameters {
 		return new(pbkdf2Params)
@@ -56,24 +63,34 @@ func newHashFromPRF(ai pkix.AlgorithmIdentifier) (func() hash.Hash, error) {
 }
 
 func newPRFParamFromHash(h crypto.Hash) (pkix.AlgorithmIdentifier, error) {
-	switch h {
-	case crypto.SHA1:
-		return pkix.AlgorithmIdentifier{
-			Algorithm:  oidHMACWithSHA1,
-			Parameters: asn1.RawValue{Tag: asn1.TagNull}}, nil
-	case crypto.SHA256:
-		return pkix.AlgorithmIdentifier{
-			Algorithm:  oidHMACWithSHA256,
-			Parameters: asn1.RawValue{Tag: asn1.TagNull}}, nil
-	}
-	return pkix.AlgorithmIdentifier{}, errors.New("pkcs8: unsupported hash function")
-}
 
-type pbkdf2Params struct {
-	Salt           []byte
-	IterationCount int
-	KeyLength      int                      `asn1:"optional"`
-	PRF            pkix.AlgorithmIdentifier `asn1:"optional"`
+	var retIdentifier = pkix.AlgorithmIdentifier{
+		Algorithm:  asn1.ObjectIdentifier{},
+		Parameters: asn1.RawValue{Tag: asn1.TagNull},
+	}
+
+	switch h {
+	case crypto.MD5:
+		retIdentifier.Algorithm = oidHMACWithMD5
+	case crypto.SHA1:
+		retIdentifier.Algorithm = oidHMACWithSHA1
+	case crypto.SHA224:
+		retIdentifier.Algorithm = oidHMACWithSHA224
+	case crypto.SHA256:
+		retIdentifier.Algorithm = oidHMACWithSHA256
+	case crypto.SHA384:
+		retIdentifier.Algorithm = oidHMACWithSHA384
+	case crypto.SHA512:
+		retIdentifier.Algorithm = oidHMACWithSHA512
+	case crypto.SHA512_224:
+		retIdentifier.Algorithm = oidHMACWithSHA512_224
+	case crypto.SHA512_256:
+		retIdentifier.Algorithm = oidHMACWithSHA512_256
+	default:
+		return pkix.AlgorithmIdentifier{}, errors.New("pkcs8: unsupported hash function")
+	}
+
+	return retIdentifier, nil
 }
 
 func (p pbkdf2Params) DeriveKey(password []byte, size int) (key []byte, err error) {
