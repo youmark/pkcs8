@@ -143,7 +143,7 @@ func ParsePrivateKey(der []byte, password []byte) (interface{}, KDFParameters, e
 	// Use the password provided to decrypt the private key
 	var privKey encryptedPrivateKeyInfo
 	if _, err := asn1.Unmarshal(der, &privKey); err != nil {
-		return nil, nil, errors.New("pkcs8: only PKCS #5 v2.0 supported")
+		return nil, nil, errors.New("pkcs8: failed to parse encrypted private key (make sure you passed the DER as the first parameter)")
 	}
 
 	if !privKey.EncryptionAlgorithm.Algorithm.Equal(oidPBES2) {
