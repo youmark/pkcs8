@@ -344,7 +344,47 @@ func TestParsePKCS8PrivateKey(t *testing.T) {
 }
 
 func TestConvertPrivateKeyToPKCS8(t *testing.T) {
-	for i, password := range [][]byte{nil, []byte("password")} {
+	password := []byte("password")
+	rsaPrivateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		t.Fatalf("GenerateKey returned: %s", err)
+	}
+	der, err := pkcs8.ConvertPrivateKeyToPKCS8(rsaPrivateKey, password)
+	if err != nil {
+		t.Fatalf("ConvertPrivateKeyToPKCS8 returned: %s", err)
+	}
+	decodedRSAPrivateKey, err := pkcs8.ParsePKCS8PrivateKey(der, password)
+	if err != nil {
+		t.Fatalf("ParsePKCS8PrivateKey returned: %s", err)
+	}
+	if rsaPrivateKey.D.Cmp(decodedRSAPrivateKey.(*rsa.PrivateKey).D) != 0 {
+		t.Fatalf("Decoded key does not match original key")
+	}
+
+	for _, curve := range []elliptic.Curve{
+		elliptic.P224(), elliptic.P256(), elliptic.P384(), elliptic.P521(),
+	} {
+		ecPrivateKey, err := ecdsa.GenerateKey(curve, rand.Reader)
+		if err != nil {
+			t.Fatalf("%s: GenerateKey returned: %s", curve, err)
+		}
+		der, err = pkcs8.ConvertPrivateKeyToPKCS8(ecPrivateKey, password)
+		if err != nil {
+			t.Fatalf("%s: ConvertPrivateKeyToPKCS8 returned: %s", curve, err)
+		}
+		decodedECPrivateKey, err := pkcs8.ParsePKCS8PrivateKey(der, password)
+		if err != nil {
+			t.Fatalf("%s: ParsePKCS8PrivateKey returned: %s", curve, err)
+		}
+		if ecPrivateKey.D.Cmp(decodedECPrivateKey.(*ecdsa.PrivateKey).D) != 0 {
+			t.Fatalf("%s: Decoded key does not match original key", curve)
+		}
+	}
+}
+
+func TestConvertPrivateKeyToPKCS8NoPassword(t *testing.T) {
+	expectedError := "Password is required to protect the private key"
+	for i, password := range [][]byte{nil, []byte("")} {
 		var args [][]byte
 		if password != nil {
 			args = append(args, password)
@@ -353,16 +393,12 @@ func TestConvertPrivateKeyToPKCS8(t *testing.T) {
 		if err != nil {
 			t.Fatalf("%d: GenerateKey returned: %s", i, err)
 		}
-		der, err := pkcs8.ConvertPrivateKeyToPKCS8(rsaPrivateKey, args...)
-		if err != nil {
-			t.Fatalf("%d: ConvertPrivateKeyToPKCS8 returned: %s", i, err)
+		_, err = pkcs8.ConvertPrivateKeyToPKCS8(rsaPrivateKey, password)
+		if err == nil {
+			t.Errorf("%d: Should have failed", i)
 		}
-		decodedRSAPrivateKey, err := pkcs8.ParsePKCS8PrivateKey(der, args...)
-		if err != nil {
-			t.Fatalf("%d: ParsePKCS8PrivateKey returned: %s", i, err)
-		}
-		if rsaPrivateKey.D.Cmp(decodedRSAPrivateKey.(*rsa.PrivateKey).D) != 0 {
-			t.Fatalf("%d: Decoded key does not match original key", i)
+		if err.Error() != expectedError {
+			t.Errorf("%d: Expected error \"%s\", got \"%s\"", i, expectedError, err.Error())
 		}
 
 		for _, curve := range []elliptic.Curve{
@@ -372,16 +408,12 @@ func TestConvertPrivateKeyToPKCS8(t *testing.T) {
 			if err != nil {
 				t.Fatalf("%d, %s: GenerateKey returned: %s", i, curve, err)
 			}
-			der, err = pkcs8.ConvertPrivateKeyToPKCS8(ecPrivateKey, args...)
-			if err != nil {
-				t.Fatalf("%d, %s: ConvertPrivateKeyToPKCS8 returned: %s", i, curve, err)
+			_, err = pkcs8.ConvertPrivateKeyToPKCS8(ecPrivateKey, password)
+			if err == nil {
+				t.Errorf("%d, %s: Should have failed", i, curve)
 			}
-			decodedECPrivateKey, err := pkcs8.ParsePKCS8PrivateKey(der, args...)
-			if err != nil {
-				t.Fatalf("%d, %s: ParsePKCS8PrivateKey returned: %s", i, curve, err)
-			}
-			if ecPrivateKey.D.Cmp(decodedECPrivateKey.(*ecdsa.PrivateKey).D) != 0 {
-				t.Fatalf("%d, %s: Decoded key does not match original key", i, curve)
+			if err.Error() != expectedError {
+				t.Errorf("%d, %s: Expected error \"%s\", got \"%s\"", i, curve, expectedError, err.Error())
 			}
 		}
 	}
