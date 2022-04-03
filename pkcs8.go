@@ -6,11 +6,14 @@ import (
 	"crypto/ecdsa"
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/asn1"
+	"encoding/pem"
 	"errors"
 	"fmt"
+	"io/ioutil"
 )
 
 // DefaultOpts are the default options for encrypting a key if none are given.
@@ -306,4 +309,67 @@ func ConvertPrivateKeyToPKCS8(priv interface{}, v ...[]byte) ([]byte, error) {
 		password = v[0]
 	}
 	return MarshalPrivateKey(priv, password, nil)
+}
+
+// LoadX509KeyPairWithPassphrase reads and parses a public/private key pair from a pair
+// of files. The files must contain PEM encoded data. The certificate file
+// may contain intermediate certificates following the leaf certificate to
+// form a certificate chain. On successful return, Certificate.Leaf will
+// be nil because the parsed form of the certificate is not retained.
+// It can handle EncryptedPrivateKeyInfo format with PKCS#5 (v2.0) algorithms.
+func LoadX509KeyPairWithPassphrase(certFile, keyFile, passphrase string) (tls.Certificate, error) {
+	certPEMBlock, err := ioutil.ReadFile(certFile)
+	if err != nil {
+		return tls.Certificate{}, err
+	}
+
+	keyPEMBlock, err := ioutil.ReadFile(keyFile)
+	if err != nil {
+		return tls.Certificate{}, err
+	}
+	return X509KeyPairWithPassphrase(certPEMBlock, keyPEMBlock, passphrase)
+}
+
+// X509KeyPairWithPassphrase parses a public/private key pair from a pair of
+// PEM encoded data. The private key must be encrypted with a passphrase, this method can handle
+// EncryptedPrivateKeyInfo format with PKCS#5 (v2.0) algorithms. On successful return,
+// Certificate.Leaf will be nil because the parsed form of the certificate is not retained.
+func X509KeyPairWithPassphrase(certPEMBlock, keyPEMBlock []byte, passphrase string) (tls.Certificate, error) {
+	decryptedKey, err := decryptKey(keyPEMBlock, passphrase)
+	if err != nil {
+		return tls.Certificate{}, err
+	}
+
+	return tls.X509KeyPair(certPEMBlock, decryptedKey)
+}
+
+func decryptKey(rawKeyPEMBlock []byte, passphrase string) ([]byte, error) {
+	if len(passphrase) == 0 {
+		return []byte{}, errors.New("pkcs8: passphrase cannot be empty")
+	}
+
+	keyPEMBlock, _ := pem.Decode(rawKeyPEMBlock)
+	if keyPEMBlock == nil {
+		return []byte{}, errors.New("pkcs8: failed to find any PEM data in key input")
+	}
+
+	decryptedPrivateKey, err := ParsePKCS8PrivateKey(keyPEMBlock.Bytes, []byte(passphrase))
+	if err != nil {
+		return []byte{}, err
+	}
+
+	decryptedBytes, err := x509.MarshalPKCS8PrivateKey(decryptedPrivateKey)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	decryptedPEMBlock := pem.Block{
+		Type:    keyPEMBlock.Type,
+		Headers: nil,
+		Bytes:   decryptedBytes,
+	}
+
+	pkPem := pem.EncodeToMemory(&decryptedPEMBlock)
+
+	return pkPem, nil
 }
