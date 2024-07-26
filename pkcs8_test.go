@@ -343,6 +343,64 @@ func TestParsePKCS8PrivateKey(t *testing.T) {
 	}
 }
 
+func TestParsePKCS8PrivateKeyInvalidDER(t *testing.T) {
+	keyList := []struct {
+		name      string
+		encrypted string
+		password  string
+	}{
+		{
+			name:      "encryptedRSA2048aes",
+			encrypted: encryptedRSA2048aes,
+			password:  "password",
+		},
+		{
+			name:      "encryptedRSA2048des3",
+			encrypted: encryptedRSA2048des3,
+			password:  "password",
+		},
+		{
+			name:      "encryptedRSA2048scrypt",
+			encrypted: encryptedRSA2048scrypt,
+			password:  "password",
+		},
+		{
+			name:      "encryptedEC256aes",
+			encrypted: encryptedEC256aes,
+			password:  "password",
+		},
+		{
+			name:      "encryptedEC256aes128sha1",
+			encrypted: encryptedEC256aes128sha1,
+			password:  "password",
+		},
+		{
+			name:      "encryptedRFCscrypt",
+			encrypted: encryptedRFCscrypt,
+			password:  "Rabbit",
+		},
+		{
+			name:      "encryptedEC128aes",
+			encrypted: encryptedEC128aes,
+			password:  "password",
+		},
+	}
+	expectedError := "pkcs8: failed to parse encrypted private key (make sure you passed the DER as the first parameter)"
+
+	for i, key := range keyList {
+		t.Run(key.name, func(t *testing.T) {
+			_, err := pkcs8.ParsePKCS8PrivateKey([]byte(key.encrypted), []byte(key.password))
+			if err == nil {
+				t.Errorf("%d: should have failed", i)
+			} else {
+				if err.Error() != expectedError {
+					t.Errorf("Expected error \"%s\", got \"%s\"", expectedError, err.Error())
+				}
+			}
+		})
+	}
+}
+
 func TestConvertPrivateKeyToPKCS8(t *testing.T) {
 	for i, password := range [][]byte{nil, []byte("password")} {
 		var args [][]byte
